@@ -25,7 +25,7 @@ library(dplyr)
 library(timevis)
 library(leaflet.extras)
 library(htmltools)
-
+library(htmlwidgets)
 ```
 
 ```{r}
@@ -37,6 +37,7 @@ head(localizacion)
 
 
 ```{r}
+
 # Define UI
 ui <- fluidPage(
   leafletOutput("map"),
@@ -90,9 +91,7 @@ server <- function(input, output, session) {
 shinyApp(ui, server)
 ```
 
-```{r}
-Timesta
-```
+
 
 
 
