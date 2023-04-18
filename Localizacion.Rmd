@@ -1,0 +1,99 @@
+---
+title: "Localizacion"
+author: "Paula Villasante Soriano"
+date: '2023-04-12'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+localizacion <- read.table("/Users/paulavillasante/Desktop/Smartscreen/teduca_localization.csv",sep="&", header=TRUE)
+head(localizacion)
+```
+```{r}
+names(localizacion) <- gsub("X\\.", "", names(localizacion))
+names(localizacion) <- gsub("\\.", "", names(localizacion))
+head(localizacion)
+```
+```{r}
+library(leaflet)
+library(shiny)
+library(dplyr)
+library(timevis)
+library(leaflet.extras)
+library(htmltools)
+
+```
+
+```{r}
+localizacion$Timestamp <- as.POSIXct(localizacion$Timestamp, format = "%Y-%m-%dT%H:%M:%S")
+
+head(localizacion)
+```
+
+
+
+```{r}
+# Define UI
+ui <- fluidPage(
+  leafletOutput("map"),
+  sliderInput("date", "Date:",
+              min = ifelse(nrow(na.omit(localizacion)) > 0, min(na.omit(localizacion$Timestamp)), Sys.time()), 
+              max = ifelse(nrow(na.omit(localizacion)) > 0, max(na.omit(localizacion$Timestamp)), Sys.time()), 
+              value = ifelse(nrow(na.omit(localizacion)) > 0, min(na.omit(localizacion$Timestamp)), Sys.time()),
+              step = 1, timeFormat = "%Y-%m-%dT%H:%M:%S"),
+  hr(),
+  verbatimTextOutput("popup")
+)
+
+
+# Define server
+server <- function(input, output, session) {
+  # Filter data based on selected date
+  filtered_data <- reactive({
+    localizacion %>% filter(Timestamp <= input$date)
+  })
+  
+  # Define popup text
+  output$popup <- renderPrint({
+    selected_data <- filtered_data()
+    paste0("Population: ", selected_data$User_id, "<br>",
+           "Date/Time: ", selected_data$Timestamp)
+  })
+  
+  # Render map
+  output$map <- renderLeaflet({
+    leaflet() %>%
+      addTiles() %>%
+      setView(lng = -89.61696, lat = 20.99948, zoom = 8)
+  })
+  
+  # Update markers based on selected date
+  observe({
+    data <- filtered_data()
+    date_values <- sort(unique(data$Timestamp))
+    date_values <- date_values[date_values <= input$date]
+    
+    leafletProxy("map") %>%
+      clearMarkers() %>%
+      addMarkers(data = data[data$Timestamp %in% date_values,], 
+                 lat = ~Coordinateslatitude, lng = ~Coordinateslongitude,
+                 clusterOptions = markerClusterOptions(),
+                 popup = ~paste0("Population: ", User_id, "<br>", "Date/Time: ", Timestamp))
+  })
+}
+
+# Run app
+shinyApp(ui, server)
+```
+
+```{r}
+Timesta
+```
+
+
+
+
